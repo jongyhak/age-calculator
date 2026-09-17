@@ -122,7 +122,7 @@
     white-space: nowrap;
   }
 
-  .field-row input[type="date"] {
+  .field-row input[type="text"] {
     flex: 1;
     min-width: 180px;
     font-size: 16px;
@@ -134,7 +134,7 @@
     font-family: inherit;
   }
 
-  .field-row input[type="date"]:focus {
+  .field-row input[type="text"]:focus {
     outline: 2px solid var(--seal);
     outline-offset: 1px;
   }
@@ -381,10 +381,10 @@
 
     <div class="field-row">
       <label for="birthInput">생년월일</label>
-      <input type="date" id="birthInput" min="1900-01-01">
+      <input type="text" id="birthInput" inputmode="numeric" maxlength="8" placeholder="예: 19900505 (숫자 8자리)">
     </div>
 
-    <div id="placeholderHint" class="placeholder-hint">생년월일을 입력하면 결과가 표시됩니다</div>
+    <div id="placeholderHint" class="placeholder-hint">생년월일 8자리를 입력하면 결과가 표시됩니다</div>
 
     <div id="result" class="result">
       <div class="hero">
@@ -551,7 +551,6 @@
   }
 
   function getDailyFortune(zodiac, today) {
-    // 날짜와 띠를 조합하여 매일 일정하게 고정된 오늘의 운세 인덱스 추출
     var dateStr = today.getFullYear() + String(today.getMonth()) + String(today.getDate());
     var seed = 0;
     for (var i = 0; i < dateStr.length; i++) {
@@ -564,17 +563,25 @@
   }
 
   function render() {
-    var val = birthInput.value;
-    if (!val) {
+    var val = birthInput.value.replace(/[^0-9]/g, ''); // 숫자 이외의 문자 자동 제거
+    birthInput.value = val;
+
+    if (val.length !== 8) {
       resultEl.classList.remove('show');
       placeholderHint.style.display = 'block';
+      placeholderHint.textContent = '생년월일 8자리를 입력해 주세요 (예: 19900505)';
       return;
     }
 
-    var birth = new Date(val + 'T00:00:00');
+    var y = parseInt(val.substring(0, 4), 10);
+    var m = parseInt(val.substring(4, 6), 10);
+    var d = parseInt(val.substring(6, 8), 10);
+
+    var birth = new Date(y, m - 1, d);
     var today = new Date();
 
-    if (isNaN(birth.getTime()) || birth > today) {
+    // 유효하지 않은 날짜(예: 20261345) 방어 로직
+    if (birth.getFullYear() !== y || birth.getMonth() !== m - 1 || birth.getDate() !== d || birth > today) {
       resultEl.classList.remove('show');
       placeholderHint.style.display = 'block';
       placeholderHint.textContent = '올바른 생년월일을 입력해 주세요';
@@ -604,7 +611,6 @@
       ? '올해 생일이 지나 ' + manAge + '세입니다'
       : '올해 생일이 지나면 ' + (manAge + 1) + '세가 됩니다';
       
-    // 운세 업데이트
     fortuneZodiacTitle.textContent = zodiac + '띠';
     fortuneText.textContent = getDailyFortune(zodiac, today);
 
@@ -644,7 +650,6 @@
 
   todayLabel.textContent = formatToday(new Date());
   birthInput.addEventListener('input', render);
-  birthInput.addEventListener('change', render);
   copyLinkBtn.addEventListener('click', copyLink);
 })();
 </script>
